@@ -1,0 +1,227 @@
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Helvetica, sans-serif;
+      }
+      .block {
+        border-style: solid;
+        border-width: 1px;
+        border-color: transparent;
+        width: 50px;
+        height: 50px;
+        display: inline-block;
+        transition-property: background-color border-radius opacity;
+        transition-timing-function: ease;
+        transition-duration: 0.4s;
+        box-shadow: 1px 1px 6px gray;
+        margin: 2px;
+      }
+
+      .block:hover {
+        transform: scale(1.1);
+        transition: 0.2s ease;
+        border-color: black;
+      }
+
+      #filler {
+        opacity: 1;
+      }
+
+      #grid {
+        box-shadow: 1px 1px 10px gray;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        border-radius: 5px;
+        box-shadow: 1px 1px 6px gray;
+        margin: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <center>
+      <p>Fill the grid with color:</p>
+      <div class="block" id="filler"></div>
+      <p>Points:</p>
+      <p id="points">0</p>
+      <div id="grid"></div>
+    </center>
+
+    <script>
+      let rows = 10,
+        cols = 10,
+        id = 0,
+        points = 0;
+      const colors = [
+        "LightGreen",
+        "LightSeaGreen",
+        "LightSkyBlue",
+        "LightSteelBlue",
+        "LightPink",
+        "DarkTurquoise",
+      ];
+
+      let grid = Array(rows).fill(Array(cols).fill(0));
+      document.getElementById("grid").style.width = cols * 50 + 75;
+
+      function addPoints() {
+        points++;
+        document.getElementById("points").innerHTML = points;
+      }
+
+      function decreasePoints() {
+        points--;
+        document.getElementById("points").innerHTML = points;
+      }
+
+      function checkNeighbours(elem, hover) {
+        let currentColor = elem.style.backgroundColor,
+          newColor = getColor();
+
+        let left = (parseInt(elem.id) - 1).toString().slice(-1),
+          right = (parseInt(elem.id) + 1).toString().slice(-1);
+
+        if (left != 0 && left % 9 === 0) left = -1;
+        else left = parseInt(elem.id) - 1;
+
+        if (right % 10 === 0) right = -1;
+        else right = parseInt(elem.id) + 1;
+
+        let directions = [
+          parseInt(elem.id) - rows, //up
+          parseInt(elem.id) + rows, //down
+          left, //left
+          right, //right
+        ];
+
+        for (drc in directions) {
+          try {
+            let neighbour = document.getElementById(directions[drc]);
+            if (neighbour.style.backgroundColor == currentColor) {
+              elem.classList.add("checked");
+              if (!neighbour.classList.contains("checked")) {
+                if (hover) {
+                  if (
+                    elem.style.backgroundColor !=
+                    document.getElementById("filler").style.backgroundColor
+                  ) {
+                    // hoverBorders(elem,neighbour);
+                    checkNeighbours(neighbour, hover);
+                  }
+                } else {
+                  if (
+                    currentColor !=
+                    document.getElementById("filler").style.backgroundColor
+                  ) {
+                    addPoints();
+                  } else decreasePoints();
+
+                  elem.style.borderRadius =
+                    Math.floor(Math.random() * 50) + "px";
+                  checkNeighbours(neighbour, false);
+                }
+                neighbour.classList.add("checked");
+                returnHoverBorders(elem, neighbour);
+                returnCheckedStatus(elem, neighbour);
+              }
+            } else {
+              if (!hover)
+                elem.style.backgroundColor = neighbour.style.backgroundColor;
+            }
+          } catch (e) {}
+        }
+      }
+
+      let returnCheckedStatus = (elem, neighbour) => {
+        setTimeout(() => {
+          elem.classList.remove("checked");
+          neighbour.classList.remove("checked");
+        }, 50);
+      };
+
+      let returnHoverBorders = (elem, neighbour) => {
+        setTimeout(() => {
+          elem.style.boxShadow = "1px 1px 6px gray";
+          neighbour.style.boxShadow = "1px 1px 6px gray";
+        }, 1000);
+      };
+
+      let hoverBorders = (elem, neighbour) => {
+        elem.style.boxShadow = "0 0 6px snow, 0 0 10px white";
+        neighbour.style.boxShadow = "0 0 6px snow, 0 0 10px white";
+      };
+
+      let getColor = () => {
+        return colors[Math.floor(Math.random() * colors.length)];
+      };
+
+      function createBlock() {
+        let elem = document.createElement("div");
+        elem.classList.add("block");
+        elem.style.borderRadius = Math.floor(Math.random() * 50) + "px";
+        elem.style.backgroundColor = getColor();
+        elem.addEventListener("click", () => {
+          elem.id = Array.from(
+            document.querySelectorAll("#grid > .block")
+          ).findIndex((element) => element === elem);
+          if (
+            document.querySelectorAll(
+              ".block[style*=" +
+                document.getElementById("filler").style.backgroundColor +
+                "]"
+            ).length >=
+            rows * cols
+          ) {
+            alert("Winner!");
+          } else if (
+            document.querySelectorAll(
+              ".block[style*=" +
+                document.getElementById("filler").style.backgroundColor +
+                "]"
+            ).length < 2
+          ) {
+            alert("You lost all the blocks with the wanted color!");
+          }
+          if (
+            document.querySelectorAll(
+              ".block[style*=" +
+                document.getElementById("filler").style.backgroundColor +
+                "]"
+            ).length <=
+            rows * cols
+          ) {
+            checkNeighbours(elem, false);
+          }
+        });
+        elem.addEventListener("mouseover", () => {
+          elem.id = Array.from(
+            document.querySelectorAll("#grid > .block")
+          ).findIndex((element) => element === elem);
+          checkNeighbours(elem, true);
+        });
+        // elem.style.opacity = 0;
+        // setTimeout(()=>elem.style.opacity = 1, 500);
+        document.getElementById("grid").prepend(elem);
+        return elem;
+      }
+
+      for (blockRow in grid) {
+        for (block in grid[blockRow]) {
+          createBlock();
+        }
+      }
+
+      for (block in document.querySelectorAll("#grid > .block")) {
+        block = document.querySelectorAll("#grid > .block")[block];
+        block.id = Array.from(
+          document.querySelectorAll("#grid > .block")
+        ).findIndex((element) => element === block);
+      }
+
+      let wantedColor = getColor();
+      document.getElementById("filler").style.backgroundColor = wantedColor;
+      document.body.style.background =
+        "linear-gradient(45deg, " + wantedColor + " 10%, whitesmoke 90%)";
+    </script>
+  </body>
+</html>
